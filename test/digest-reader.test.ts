@@ -31,6 +31,10 @@ describe('readNight', () => {
     expect(row.firstAt).toBe('2026-10-29T05:41:09+01:00');
   });
 
+  it('counts log lines per status', () => {
+    expect(readNight('runs', '2026-10-28')!.counts).toEqual({ ok: 10, retry: 4, fail: 1 });
+  });
+
   it('returns null for a night with no file or a bad night name', () => {
     expect(readNight('runs', '2026-01-01')).toBeNull();
     expect(readNight('runs', '../rig')).toBeNull();
@@ -39,6 +43,6 @@ describe('readNight', () => {
   it('renders an empty file as zero rows', () => {
     const dir = mkdtempSync(join(tmpdir(), 'rig-'));
     writeFileSync(join(dir, '2026-10-30.jsonl'), '');
-    expect(readNight(dir, '2026-10-30')).toEqual({ night: '2026-10-30', rows: [], badLines: 0 });
+    expect(readNight(dir, '2026-10-30')).toEqual({ night: '2026-10-30', rows: [], badLines: 0, counts: { ok: 0, retry: 0, fail: 0 } });
   });
 });
