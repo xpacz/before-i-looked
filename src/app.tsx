@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { loadConfig, type RigConfig } from './config.js';
 import { lane } from './lane.js';
+import { readNight } from './digest/index.js';
 import { readStatus } from './status.js';
+import { DigestPage, NoDigest } from './views/digest.js';
 import { Layout } from './views/layout.js';
 import { StatusBoard } from './views/status.js';
 
@@ -17,6 +19,31 @@ export function createApp(config: RigConfig = loadConfig()) {
       </Layout>,
     ),
   );
+
+  app.get('/digest/:night', (c) => {
+    const night = c.req.param('night');
+    const result = readNight(config.runsDir, night);
+    if (!result) {
+      return c.html(
+        <Layout title={`digest ${night}`} lane={lane()}>
+          <NoDigest night={night} />
+        </Layout>,
+        404,
+      );
+    }
+    return c.html(
+      <Layout title={`digest ${night}`} lane={lane()}>
+        <DigestPage night={result} />
+      </Layout>,
+    );
+  });
+
+  // Same reader as the page: the two never disagree (ADR 0001).
+  app.get('/api/digest/:night', (c) => {
+    const result = readNight(config.runsDir, c.req.param('night'));
+    if (!result) return c.json({ error: 'no run log for this night' }, 404);
+    return c.json(result);
+  });
 
   return app;
 }
